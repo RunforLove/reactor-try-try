@@ -17,8 +17,8 @@ import java.util.concurrent.Executors;
  */
 public class HandlerWithThreadPool extends Handler {
 	
-	static ExecutorService pool = Executors.newFixedThreadPool(2);
 	static final int PROCESSING = 2;
+	static ExecutorService pool = Executors.newFixedThreadPool(2);
 	
 	public HandlerWithThreadPool(Selector sel, SocketChannel c) throws IOException {
 		super(sel, c);
@@ -47,10 +47,13 @@ public class HandlerWithThreadPool extends Handler {
 	}
 	
 	class Processer implements Runnable {
+		
 		int readCount;
+		
 		Processer(int readCount) {
-			this.readCount =  readCount;
+			this.readCount = readCount;
 		}
+		
 		public void run() {
 			processAndHandOff(readCount);
 		}

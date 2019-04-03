@@ -11,11 +11,10 @@ import java.nio.channels.SocketChannel;
  */
 public class Handler implements Runnable {
 	
+	static final int READING = 0, SENDING = 1;
 	final SocketChannel socketChannel;
 	final SelectionKey selectionKey;
 	ByteBuffer input = ByteBuffer.allocate(1024);
-	static final int READING = 0, SENDING = 1;
-	
 	//初始状态
 	int state = READING;
 	String clientName = "";
@@ -26,10 +25,10 @@ public class Handler implements Runnable {
 		c.configureBlocking(false);
 		selectionKey = socketChannel.register(selector, 0);
         
-        /*
-        handler作为SellectionKey的attachment。这样，handler就与SelectionKey也就是interestOps对应起来了
-        反过来说，当interestOps发生、SelectionKey被选中时，就能从SelectionKey中取得handler
-        */
+    /*
+    handler作为SellectionKey的attachment。这样，handler就与SelectionKey也就是interestOps对应起来了
+    反过来说，当interestOps发生、SelectionKey被选中时，就能从SelectionKey中取得handler
+    */
 		selectionKey.attach(this);
 		selectionKey.interestOps(SelectionKey.OP_READ);
 		selector.wakeup();
@@ -58,10 +57,17 @@ public class Handler implements Runnable {
 		selectionKey.interestOps(SelectionKey.OP_WRITE);
 	}
 	
+	void send() throws IOException {
+		System.out.println("Saying hello to " + clientName);
+		ByteBuffer output = ByteBuffer.wrap(("Hello " + clientName + "\n").getBytes());
+		socketChannel.write(output);
+		selectionKey.interestOps(SelectionKey.OP_READ);
+		state = READING;
+	}
+	
 	/**
 	 * Processing of the read message. This only prints the message to stdOut.
 	 * 非IO操作（业务逻辑，实际应用中可能会非常耗时）：将Client发过来的信息（clientName）转成字符串形式
-	 * @param readCount
 	 */
 	synchronized void readProcess(int readCount) {
 		StringBuilder sb = new StringBuilder();
@@ -73,13 +79,5 @@ public class Handler implements Runnable {
 		sb.append(new String(subStringBytes));
 		input.clear();
 		clientName = sb.toString().trim();
-	}
-	
-	void send() throws IOException {
-		System.out.println("Saying hello to " + clientName);
-		ByteBuffer output = ByteBuffer.wrap(("Hello " + clientName + "\n").getBytes());
-		socketChannel.write(output);
-		selectionKey.interestOps(SelectionKey.OP_READ);
-		state = READING;
 	}
 }

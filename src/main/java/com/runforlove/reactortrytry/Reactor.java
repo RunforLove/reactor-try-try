@@ -60,6 +60,13 @@ public class Reactor implements Runnable {
 		selectionKey0.attach(new Acceptor());
 	}
 	
+	public static void main(String[] args) throws IOException {
+		
+		int port = 9900;
+		boolean withThreadPool = false;
+		Reactor reactor = new Reactor(port, withThreadPool);
+		new Thread(reactor).start();
+	}
 	
 	public void run() {
 		System.out.println("Server listening to port: " + serverSocketChannel.socket().getLocalPort());
@@ -90,29 +97,24 @@ public class Reactor implements Runnable {
 			r.run();
 		}
 	}
+	
 	//主要工作是为每一个连接成功后返回的SocketChannel关联一个Handler，详见Handler的构造函数
 	class Acceptor implements Runnable {
+		
 		public void run() {
 			try {
 				SocketChannel socketChannel = serverSocketChannel.accept();
 				if (socketChannel != null) {
-					if (isWithThreadPool)
+					if (isWithThreadPool) {
 						new HandlerWithThreadPool(selector, socketChannel);
-					else
+					} else {
 						new Handler(selector, socketChannel);
+					}
 				}
 				System.out.println("Connection Accepted by Reactor2");
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
 		}
-	}
-	
-	public static void main(String[] args) throws IOException{
-		
-		int port = 9900;
-		boolean withThreadPool = false;
-		Reactor reactor  = new Reactor(port, withThreadPool);
-		new Thread(reactor).start();
 	}
 }
